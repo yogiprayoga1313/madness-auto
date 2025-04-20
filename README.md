@@ -24,7 +24,7 @@ An automated bot for Madness Finance that performs:
 1. Clone repository:
 ```bash
 git clone https://github.com/yogiprayoga1313/madness-auto.git
-cd madness-reff
+cd madness-auto
 ```
 
 2. Install dependencies:

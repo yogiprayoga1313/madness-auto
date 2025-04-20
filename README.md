@@ -37,6 +37,11 @@ npm install
 PRIVATE_KEY=your_private_key_here
 ```
 
+4. Update your referral code in `autoReff.js`:
+   - Open `autoReff.js`
+   - Find the `CONFIG` object (around line 5)
+   - Update the `REFERRAL_CODE` value with your code
+
 ## Usage
 
 1. Ensure `.env` file contains your private key
@@ -57,6 +62,7 @@ The bot will automatically:
 ## File Structure
 
 - `index.js` - Main bot file
+- `autoReff.js` - Auto referral bot file (contains referral code configuration)
 - `.env` - Configuration file (private key)
 - `package.json` - Dependencies and scripts
 - `.gitignore` - Git ignored files
@@ -70,6 +76,7 @@ The bot will automatically:
 - Bot will display status for each process
 - If already checked in today, bot will notify
 - Swap and add liquidity transaction hashes will be displayed
+- Don't forget to update your referral code in `autoReff.js`
 
 ## License
 

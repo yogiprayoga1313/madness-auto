@@ -3,7 +3,7 @@ const axios = require('axios');
 
 // Configuration
 const CONFIG = {
-    REFERRAL_CODE: 'S7UZPO',
+    REFERRAL_CODE: 'S7UZPO', // update your referral code here
     MADNESS_API: 'https://madness.finance/api',
     MONAD_RPC: 'https://testnet-rpc.monad.xyz/',
     API_KEY: 'madness-9w1dawd8a962d'

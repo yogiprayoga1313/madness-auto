@@ -4,7 +4,7 @@ require('dotenv').config();
 
 // Configuration
 const CONFIG = {
-    PRIVATE_KEY: process.env.PRIVATE_KEY,
+    PRIVATE_KEYS: process.env.PRIVATE_KEYS ? process.env.PRIVATE_KEYS.split(',') : [],
     MADNESS_API: 'https://madness.finance/api',
     MONAD_RPC: 'https://testnet-rpc.monad.xyz/',
     API_KEY: 'madness-9w1dawd8a962d',
@@ -15,7 +15,7 @@ const CONFIG = {
     // Swap amount in MON
     SWAP_AMOUNT: ethers.parseEther('0.1'), // 0.1 MON
     // Liquidity amounts
-    LIQUIDITY_MON: ethers.parseEther('0.1'), // 0.1 MON
+    LIQUIDITY_MON: ethers.parseEther('0.12'), // 0.12 MON
     LIQUIDITY_MAD: ethers.parseEther('8.0') // 8 MAD
 };
 
@@ -109,19 +109,20 @@ async function performSwap(wallet) {
         ];
         const router = new ethers.Contract(CONFIG.ROUTER_ADDRESS, routerABI, wallet);
 
-        // Set path for swap
+        // Set path for swap (MON -> WMON -> MAD)
         const path = [CONFIG.WMON_ADDRESS, CONFIG.MAD_ADDRESS];
         
         // Get current block timestamp and add 20 minutes
         const deadline = Math.floor(Date.now() / 1000) + 1200;
         
-        // Set minimum amount out (90% of expected)
-        const amountOutMin = ethers.parseEther('7.0'); // Minimum 7 MAD tokens
+        // Set minimum amount out (80% of expected)
+        const amountOutMin = ethers.parseEther('5.0'); // Minimum 5 MAD tokens
 
         console.log('📊 Swap Details:');
-        console.log('From: 0.1 MON');
-        console.log('To: MAD (min 7 tokens)');
+        console.log('From:', ethers.formatEther(CONFIG.SWAP_AMOUNT), 'MON');
+        console.log('To: MAD (min 5 tokens)');
         console.log('Path:', path);
+        console.log('Deadline:', new Date(deadline * 1000).toLocaleString());
         
         // Perform swap
         console.log('🔄 Executing swap...');
@@ -130,11 +131,18 @@ async function performSwap(wallet) {
             path,
             wallet.address,
             deadline,
-            { value: CONFIG.SWAP_AMOUNT }
+            { 
+                value: CONFIG.SWAP_AMOUNT,
+                gasLimit: 300000 // Increased gas limit
+            }
         );
 
         console.log('⏳ Waiting for transaction confirmation...');
         const receipt = await tx.wait();
+        
+        if (receipt.status === 0) {
+            throw new Error('Transaction reverted');
+        }
         
         console.log('✅ Swap successful!');
         console.log('📝 Transaction Hash:', receipt.hash);
@@ -143,6 +151,12 @@ async function performSwap(wallet) {
         return receipt;
     } catch (error) {
         console.error('❌ Error performing swap:', error.message);
+        if (error.reason) {
+            console.error('Reason:', error.reason);
+        }
+        if (error.transaction) {
+            console.error('Transaction:', error.transaction);
+        }
         return null;
     }
 }
@@ -169,161 +183,125 @@ async function updateProgressOnChain(userId, taskId, amount) {
     }
 }
 
-// Function to approve MAD token for router
-async function approveMADToken(wallet) {
+// Function to claim reward
+async function claimReward(userId, taskId) {
     try {
-        console.log('🔄 Approving MAD token for router...');
-        
-        // Get MAD token contract
-        const madABI = [
-            'function approve(address spender, uint256 amount) external returns (bool)'
-        ];
-        const madToken = new ethers.Contract(CONFIG.MAD_ADDRESS, madABI, wallet);
-
-        // Approve router to spend MAD tokens
-        const tx = await madToken.approve(
-            CONFIG.ROUTER_ADDRESS,
-            CONFIG.LIQUIDITY_MAD
-        );
-
-        console.log('⏳ Waiting for approval confirmation...');
-        const receipt = await tx.wait();
-        
-        console.log('✅ MAD token approved successfully!');
-        console.log('📝 Transaction Hash:', receipt.hash);
-        
-        return receipt;
+        console.log('🔄 Claiming reward...');
+        const response = await axios.post(`${CONFIG.MADNESS_API}/claim`, {
+            userId: userId,
+            taskId: taskId
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': CONFIG.API_KEY
+            }
+        });
+        console.log('✅ Reward claimed successfully!');
+        return response.data;
     } catch (error) {
-        console.error('❌ Error approving MAD token:', error.message);
+        console.error('❌ Error claiming reward:', error.message);
         return null;
     }
 }
 
-// Function to add liquidity to MON-MAD pool
-async function addLiquidity(wallet) {
+// Main function to run auto checkin and swap for a single account
+async function runAccount(privateKey) {
     try {
-        console.log('🔄 Adding liquidity to MON-MAD pool...');
+        console.log('\n🚀 Starting process for new account...');
         
-        // Get router contract
-        const routerABI = [
-            'function addLiquidityETH(address token, uint amountTokenDesired, uint amountTokenMin, uint amountETHMin, address to, uint deadline) external payable returns (uint amountToken, uint amountETH, uint liquidity)'
-        ];
-        const router = new ethers.Contract(CONFIG.ROUTER_ADDRESS, routerABI, wallet);
-
-        // Get current block timestamp and add 20 minutes
-        const deadline = Math.floor(Date.now() / 1000) + 1200;
-        
-        // Set minimum amounts (90% of desired)
-        const amountTokenMin = CONFIG.LIQUIDITY_MAD * 9n / 10n;
-        const amountETHMin = CONFIG.LIQUIDITY_MON * 9n / 10n;
-
-        console.log('📊 Liquidity Details:');
-        console.log('MON Amount:', ethers.formatEther(CONFIG.LIQUIDITY_MON));
-        console.log('MAD Amount:', ethers.formatEther(CONFIG.LIQUIDITY_MAD));
-        console.log('Minimum MON:', ethers.formatEther(amountETHMin));
-        console.log('Minimum MAD:', ethers.formatEther(amountTokenMin));
-        
-        // Add liquidity
-        console.log('🔄 Executing add liquidity...');
-        const tx = await router.addLiquidityETH(
-            CONFIG.MAD_ADDRESS,
-            CONFIG.LIQUIDITY_MAD,
-            amountTokenMin,
-            amountETHMin,
-            wallet.address,
-            deadline,
-            { value: CONFIG.LIQUIDITY_MON }
-        );
-
-        console.log('⏳ Waiting for transaction confirmation...');
-        const receipt = await tx.wait();
-        
-        console.log('✅ Liquidity added successfully!');
-        console.log('📝 Transaction Hash:', receipt.hash);
-        console.log('💰 Gas Used:', ethers.formatEther(receipt.gasUsed), 'MON');
-        
-        return receipt;
-    } catch (error) {
-        console.error('❌ Error adding liquidity:', error.message);
-        return null;
-    }
-}
-
-// Main function to run auto checkin, swap and add liquidity
-async function runAutoCheckin() {
-    try {
-        console.log('🚀 Starting auto checkin, swap and add liquidity process...');
-        
-        // Check if private key exists
-        if (!CONFIG.PRIVATE_KEY) {
-            console.error('❌ Private key not found in .env file');
-            return;
-        }
-
         // Step 1: Connect Wallet
-        const wallet = await connectWallet(CONFIG.PRIVATE_KEY);
+        const wallet = await connectWallet(privateKey);
         if (!wallet) {
-            console.error('❌ Failed to connect wallet, stopping process');
+            console.error('❌ Failed to connect wallet, skipping account');
             return;
         }
 
         // Step 2: Get User Profile
         const profile = await getUserProfile(wallet.address);
         if (!profile || !profile.data || !profile.data.user) {
-            console.error('❌ Failed to get user profile, stopping process');
+            console.error('❌ Failed to get user profile, skipping account');
             return;
         }
         const userId = profile.data.user._id;
         console.log('📋 User ID:', userId);
+        console.log('👛 Wallet Address:', wallet.address);
 
         // Step 3: Check Previous Checkin
-        const taskId = '67cab3f2ea568701db79306d'; // Swap task ID
-        const hasCheckedIn = await checkPreviousCheckin(userId, taskId);
+        const checkinTaskId = '67cab35dea568701db792ff1'; // Checkin task ID
+        const hasCheckedIn = await checkPreviousCheckin(userId, checkinTaskId);
         
         if (hasCheckedIn) {
             console.log('⚠️ You have already checked in today!');
             return;
         }
 
-        // Step 4: Perform Swap
+        // Step 4: Perform Checkin
+        const checkinResult = await performCheckin(userId, checkinTaskId);
+        if (!checkinResult) {
+            console.error('❌ Checkin failed, skipping account');
+            return;
+        }
+
+        // Step 5: Perform Swap
+        const swapTaskId = '67cab3f2ea568701db79306d'; // Swap task ID
         const swapResult = await performSwap(wallet);
         if (!swapResult) {
-            console.error('❌ Swap failed, stopping process');
+            console.error('❌ Swap failed, skipping account');
             return;
         }
 
-        // Step 5: Approve MAD token
-        const approveResult = await approveMADToken(wallet);
-        if (!approveResult) {
-            console.error('❌ MAD token approval failed, stopping process');
-            return;
-        }
-
-        // Step 6: Add Liquidity
-        const liquidityResult = await addLiquidity(wallet);
-        if (!liquidityResult) {
-            console.error('❌ Adding liquidity failed, stopping process');
-            return;
-        }
-
-        // Step 7: Update Progress On Chain
-        const progressResult = await updateProgressOnChain(userId, taskId, 0.1);
+        // Step 6: Update Progress On Chain
+        const progressResult = await updateProgressOnChain(userId, swapTaskId, 0.1);
         if (!progressResult) {
             console.error('❌ Failed to update progress on chain');
             return;
         }
 
-        console.log('✨ All processes completed successfully!');
+        // Step 7: Claim Reward
+        const claimResult = await claimReward(userId, swapTaskId);
+        if (!claimResult) {
+            console.error('❌ Failed to claim reward');
+            return;
+        }
+
+        console.log('✨ All processes completed successfully for this account!');
         console.log('1. ✅ Checkin completed');
         console.log('2. ✅ Swap completed');
-        console.log('3. ✅ MAD token approved');
-        console.log('4. ✅ Liquidity added');
-        console.log('5. ✅ Progress updated on chain');
+        console.log('3. ✅ Progress updated on chain');
+        console.log('4. ✅ Reward claimed');
 
     } catch (error) {
-        console.error('❌ Error in auto process:', error.message);
+        console.error('❌ Error processing account:', error.message);
     }
 }
 
-// Run auto checkin, swap and add liquidity
-runAutoCheckin(); 
+// Main function to run all accounts
+async function runAllAccounts() {
+    try {
+        if (!CONFIG.PRIVATE_KEYS || CONFIG.PRIVATE_KEYS.length === 0) {
+            console.error('❌ No private keys found in .env file');
+            return;
+        }
+
+        console.log(`📊 Found ${CONFIG.PRIVATE_KEYS.length} accounts to process`);
+        
+        // Process each account sequentially
+        for (let i = 0; i < CONFIG.PRIVATE_KEYS.length; i++) {
+            console.log(`\n🔄 Processing account ${i + 1} of ${CONFIG.PRIVATE_KEYS.length}`);
+            await runAccount(CONFIG.PRIVATE_KEYS[i]);
+            
+            // Add delay between accounts to avoid rate limiting
+            if (i < CONFIG.PRIVATE_KEYS.length - 1) {
+                console.log('⏳ Waiting 10 seconds before processing next account...');
+                await new Promise(resolve => setTimeout(resolve, 10000));
+            }
+        }
+
+        console.log('\n✨ All accounts processed!');
+    } catch (error) {
+        console.error('❌ Error in main process:', error.message);
+    }
+}
+
+// Run all accounts
+runAllAccounts(); 

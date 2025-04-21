@@ -1,29 +1,29 @@
 # Madness Finance Auto Bot
 
-An automated bot for Madness Finance that performs:
-1. Daily auto check-in
-2. Auto swap MON to MAD token (0.1 MON)
-3. Auto add liquidity to MON-MAD pool (0.1 MON + 8 MAD)
+Bot otomatis untuk Madness Finance yang melakukan:
+1. Auto check-in harian
+2. Auto swap MON ke MAD
+3. Auto update progress on chain
 
-## Features
+## Fitur
 
-- Daily auto check-in
-- Auto swap MON to MAD token
-- Auto add liquidity to MON-MAD pool
-- Previous check-in status notification
-- Detailed transaction logging
+- ✅ Auto check-in harian
+- ✅ Auto swap MON ke MAD
+- ✅ Auto update progress on chain
+- ✅ Notifikasi status check-in sebelumnya
+- ✅ Error handling yang informatif
 
-## Requirements
+## Persyaratan
 
-- Node.js v16 or higher
-- Monad wallet private key
-- Sufficient MON balance (minimum 0.2 MON for swap and add liquidity)
+- Node.js v18 atau lebih tinggi
+- Private key wallet Monad
+- Sedikit MON untuk gas fee
 
-## Installation
+## Instalasi
 
 1. Clone repository:
 ```bash
-git clone https://github.com/yogiprayoga1313/madness-auto.git
+git clone https://github.com/username/madness-auto.git
 cd madness-auto
 ```
 
@@ -32,52 +32,39 @@ cd madness-auto
 npm install
 ```
 
-3. Create `.env` file and add your private key:
+3. Buat file `.env` dan masukkan private key Anda:
 ```bash
 PRIVATE_KEY=your_private_key_here
 ```
 
-4. Update your referral code in `autoReff.js`:
-   - Open `autoReff.js`
-   - Find the `CONFIG` object (around line 5)
-   - Update the `REFERRAL_CODE` value with your code
+## Penggunaan
 
-## Usage
+1. Pastikan Anda memiliki:
+   - Private key di file `.env`
+   - Sedikit MON untuk gas fee
 
-1. Ensure `.env` file contains your private key
-2. Run the bot:
+2. Jalankan bot:
 ```bash
 node index.js
 ```
 
-The bot will automatically:
-1. Connect to wallet
-2. Check profile
-3. Check previous check-in status
-4. Perform MON to MAD swap (0.1 MON)
-5. Approve MAD token for router
-6. Add liquidity to pool (0.1 MON + 8 MAD)
-7. Update progress on chain
+Bot akan:
+1. Connect ke wallet
+2. Check-in harian
+3. Swap MON ke MAD
+4. Update progress on chain
 
-## File Structure
+## Catatan
 
-- `index.js` - Main bot file
-- `autoReff.js` - Auto referral bot file (contains referral code configuration)
-- `.env` - Configuration file (private key)
-- `package.json` - Dependencies and scripts
-- `.gitignore` - Git ignored files
+- Bot akan menampilkan status setiap langkah
+- Jika sudah check-in hari ini, bot akan memberitahu
+- Pastikan memiliki cukup MON untuk gas fee
+- Private key disimpan di file `.env` untuk keamanan
 
-## Notes
+## Kontribusi
 
-- Ensure wallet has sufficient MON for:
-  - Swap (0.1 MON)
-  - Add liquidity (0.1 MON)
-  - Gas fees
-- Bot will display status for each process
-- If already checked in today, bot will notify
-- Swap and add liquidity transaction hashes will be displayed
-- Don't forget to update your referral code in `autoReff.js`
+Silakan buat pull request untuk kontribusi. Untuk perubahan besar, buka issue terlebih dahulu untuk diskusi.
 
-## License
+## Lisensi
 
 MIT 

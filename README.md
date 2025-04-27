@@ -45,7 +45,7 @@ PRIVATE_KEYS=your_private_key_here
 PRIVATE_KEYS=private_key1,private_key2,private_key3
 
 # Example with 3 accounts:
-# PRIVATE_KEYS=0x123...,0x456...,0x789...
+# PRIVATE_KEYS=0x123...,0x456...,0x759..
 ```
 
 4. Run the bot:

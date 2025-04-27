@@ -29,7 +29,10 @@ async function connectWallet(privateKey) {
         // Verify connection by getting balance
         const balance = await provider.getBalance(wallet.address);
         console.log('✅ Wallet connected successfully!');
-        console.log('📝 Wallet Address:', wallet.address);
+        
+        // Mask the middle part of the address
+        const maskedAddress = `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`;
+        console.log('📝 Wallet Address:', maskedAddress);
         console.log('💰 Balance:', ethers.formatEther(balance), 'MON');
         
         return wallet;
@@ -224,7 +227,10 @@ async function runAccount(privateKey) {
         }
         const userId = profile.data.user._id;
         console.log('📋 User ID:', userId);
-        console.log('👛 Wallet Address:', wallet.address);
+        
+        // Mask the middle part of the address
+        const maskedAddress = `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`;
+        console.log('👛 Wallet Address:', maskedAddress);
 
         // Step 3: Check Previous Checkin
         const checkinTaskId = '67cab35dea568701db792ff1'; // Checkin task ID
